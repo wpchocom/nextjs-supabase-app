@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+build
+database.types.ts
+tsconfig.tsbuildinfo
+shrimp_data
+package-lock.json
