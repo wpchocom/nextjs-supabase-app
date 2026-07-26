@@ -43,3 +43,12 @@ export interface Announcement {
   content: string;
   createdAt: string;
 }
+
+export interface EventParticipant {
+  id: string;
+  eventId: string;
+  userId: string;
+  rsvpStatus: RsvpStatus;
+  attendanceStatus: AttendanceStatus;
+  createdAt: string;
+}
