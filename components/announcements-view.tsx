@@ -4,48 +4,42 @@ import { useState } from "react";
 
 import { AnnouncementForm } from "@/components/announcement-form";
 import { EmptyState } from "@/components/empty-state";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Announcement } from "@/lib/types/domain";
-
-const DUMMY_AUTHOR_NAME = "김주최";
+import type { AnnouncementWithAuthor } from "@/lib/data/announcements";
+import type { Event } from "@/lib/types/domain";
 
 export function AnnouncementsView({
   groupId,
   initialAnnouncements,
+  events,
+  isOrganizer,
 }: {
   groupId: string;
-  initialAnnouncements: Announcement[];
+  initialAnnouncements: AnnouncementWithAuthor[];
+  events: Event[];
+  isOrganizer: boolean;
 }) {
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
-  const [isOrganizerView, setIsOrganizerView] = useState(true);
 
-  const handleCreate = (announcement: Announcement) => {
+  const handleCreate = (announcement: AnnouncementWithAuthor) => {
     setAnnouncements((prev) => [announcement, ...prev]);
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setIsOrganizerView((prev) => !prev)}
-        >
-          {isOrganizerView ? "참여자로 보기" : "주최자로 보기"}
-        </Button>
-      </div>
-
-      {isOrganizerView && (
-        <AnnouncementForm groupId={groupId} onCreate={handleCreate} />
+      {isOrganizer && (
+        <AnnouncementForm
+          groupId={groupId}
+          events={events}
+          onCreate={handleCreate}
+        />
       )}
 
       {announcements.length === 0 ? (
         <EmptyState
           title="아직 공지가 없습니다"
           description={
-            isOrganizerView
+            isOrganizer
               ? "위 폼으로 첫 공지를 작성해보세요."
               : "주최자가 공지를 등록하면 이곳에 표시됩니다."
           }
@@ -59,7 +53,7 @@ export function AnnouncementsView({
                   {announcement.title}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {DUMMY_AUTHOR_NAME} ·{" "}
+                  {announcement.authorName} ·{" "}
                   {new Date(announcement.createdAt).toLocaleString("ko-KR")}
                 </p>
               </CardHeader>

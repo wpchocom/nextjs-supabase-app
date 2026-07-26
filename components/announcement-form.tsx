@@ -21,18 +21,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Announcement } from "@/lib/types/domain";
+import type { AnnouncementWithAuthor } from "@/lib/data/announcements";
+import { createClient } from "@/lib/supabase/client";
+import type { Event } from "@/lib/types/domain";
 
 const WHOLE_GROUP_VALUE = "whole-group";
 
-const DUMMY_EVENT_OPTIONS = [{ id: "evt-demo-1", title: "다가오는 회차" }];
-
 export function AnnouncementForm({
   groupId,
+  events,
   onCreate,
 }: {
   groupId: string;
-  onCreate: (announcement: Announcement) => void;
+  events: Event[];
+  onCreate: (announcement: AnnouncementWithAuthor) => void;
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -51,19 +53,37 @@ export function AnnouncementForm({
 
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("announcements")
+        .insert({
+          group_id: groupId,
+          event_id: eventId === WHOLE_GROUP_VALUE ? null : eventId,
+          title,
+          content,
+        })
+        .select("*, profiles(username, full_name)")
+        .single();
+      if (error) throw error;
+
       onCreate({
-        id: `local-${Date.now()}`,
-        groupId,
-        eventId: eventId === WHOLE_GROUP_VALUE ? null : eventId,
-        authorId: "user-1",
-        title,
-        content,
-        createdAt: new Date().toISOString(),
+        id: data.id,
+        groupId: data.group_id,
+        eventId: data.event_id,
+        authorId: data.author_id,
+        title: data.title,
+        content: data.content,
+        createdAt: data.created_at,
+        authorName:
+          data.profiles?.full_name || data.profiles?.username || "알 수 없음",
       });
       setTitle("");
       setContent("");
       setEventId(WHOLE_GROUP_VALUE);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "공지 등록에 실패했습니다.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +116,7 @@ export function AnnouncementForm({
                 <SelectItem value={WHOLE_GROUP_VALUE}>
                   그룹 전체 공지
                 </SelectItem>
-                {DUMMY_EVENT_OPTIONS.map((event) => (
+                {events.map((event) => (
                   <SelectItem key={event.id} value={event.id}>
                     {event.title}
                   </SelectItem>

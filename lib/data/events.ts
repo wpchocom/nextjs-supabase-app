@@ -34,6 +34,17 @@ export async function getUpcomingEventByGroupId(
   return data ? mapEvent(data) : null;
 }
 
+export async function getEventsByGroupId(groupId: string): Promise<Event[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("events")
+    .select("*")
+    .eq("group_id", groupId)
+    .order("event_at", { ascending: true });
+
+  return (data ?? []).map(mapEvent);
+}
+
 export interface EventWithGroupName extends Event {
   groupName: string;
 }
