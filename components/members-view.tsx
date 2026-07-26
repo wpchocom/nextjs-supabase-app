@@ -26,7 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ErrorMessage } from "@/components/error-message";
 import type { MemberWithProfile } from "@/lib/data/members";
+import { createClient } from "@/lib/supabase/client";
 import type { EventParticipant, RsvpStatus } from "@/lib/types/domain";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -35,18 +37,33 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export function MembersView({
+  isOrganizer,
   initialMembers,
   initialParticipants,
 }: {
+  isOrganizer: boolean;
   initialMembers: MemberWithProfile[];
   initialParticipants: EventParticipant[];
 }) {
   const [members, setMembers] = useState(initialMembers);
   const [participants, setParticipants] = useState(initialParticipants);
-  const [isOrganizerView, setIsOrganizerView] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRemove = (memberId: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== memberId));
+  const handleRemove = async (memberId: string) => {
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("group_members")
+        .update({ status: "removed" })
+        .eq("id", memberId);
+      if (error) throw error;
+      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "멤버 제거에 실패했습니다.",
+      );
+    }
   };
 
   const handleRsvpChange = (userId: string, rsvpStatus: RsvpStatus) => {
@@ -74,16 +91,7 @@ export function MembersView({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setIsOrganizerView((prev) => !prev)}
-        >
-          {isOrganizerView ? "참여자로 보기" : "주최자로 보기"}
-        </Button>
-      </div>
+      {error && <ErrorMessage message={error} />}
 
       <Tabs defaultValue="roster">
         <TabsList>
@@ -98,7 +106,7 @@ export function MembersView({
                 <TableRow>
                   <TableHead>이름</TableHead>
                   <TableHead>역할</TableHead>
-                  {isOrganizerView && (
+                  {isOrganizer && (
                     <TableHead className="text-right">관리</TableHead>
                   )}
                 </TableRow>
@@ -116,7 +124,7 @@ export function MembersView({
                         {ROLE_LABEL[member.role]}
                       </Badge>
                     </TableCell>
-                    {isOrganizerView && (
+                    {isOrganizer && (
                       <TableCell className="text-right">
                         {member.role !== "organizer" && (
                           <RemoveMemberDialog
@@ -147,7 +155,7 @@ export function MembersView({
                       {ROLE_LABEL[member.role]}
                     </Badge>
                   </div>
-                  {isOrganizerView && member.role !== "organizer" && (
+                  {isOrganizer && member.role !== "organizer" && (
                     <RemoveMemberDialog
                       memberName={member.displayName}
                       onConfirm={() => handleRemove(member.id)}
@@ -174,7 +182,7 @@ export function MembersView({
                 <TableRow>
                   <TableHead>이름</TableHead>
                   <TableHead>RSVP</TableHead>
-                  {isOrganizerView && <TableHead>출석</TableHead>}
+                  {isOrganizer && <TableHead>출석</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,7 +204,7 @@ export function MembersView({
                           }
                         />
                       </TableCell>
-                      {isOrganizerView && (
+                      {isOrganizer && (
                         <TableCell>
                           <Checkbox
                             checked={attended}
@@ -235,7 +243,7 @@ export function MembersView({
                           handleRsvpChange(member.userId, status)
                         }
                       />
-                      {isOrganizerView && (
+                      {isOrganizer && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">
                             출석
