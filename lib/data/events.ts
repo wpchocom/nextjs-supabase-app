@@ -33,3 +33,35 @@ export async function getUpcomingEventByGroupId(
 
   return data ? mapEvent(data) : null;
 }
+
+export interface EventWithGroupName extends Event {
+  groupName: string;
+}
+
+export async function getUpcomingEventsForUser(): Promise<
+  EventWithGroupName[]
+> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims.sub;
+  if (!userId) return [];
+
+  const { data } = await supabase
+    .from("group_members")
+    .select("groups(name, events(*))")
+    .eq("user_id", userId)
+    .eq("status", "active");
+
+  const events = (data ?? []).flatMap((row) => {
+    const group = row.groups;
+    if (!group) return [];
+    return group.events.map((event) => ({
+      ...mapEvent(event),
+      groupName: group.name,
+    }));
+  });
+
+  return events.sort(
+    (a, b) => new Date(a.eventAt).getTime() - new Date(b.eventAt).getTime(),
+  );
+}

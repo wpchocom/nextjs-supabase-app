@@ -8,7 +8,8 @@ export function CopyInviteLinkButton({ inviteUrl }: { inviteUrl: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(inviteUrl);
+    const absoluteUrl = new URL(inviteUrl, window.location.origin).toString();
+    await navigator.clipboard.writeText(absoluteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
