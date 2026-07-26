@@ -14,6 +14,100 @@ export type Database = {
   }
   public: {
     Tables: {
+      events: {
+        Row: {
+          created_at: string
+          event_at: string
+          group_id: string
+          id: string
+          location: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          event_at: string
+          group_id: string
+          id?: string
+          location: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          event_at?: string
+          group_id?: string
+          id?: string
+          location?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          role: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          name: string
+          organizer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          name: string
+          organizer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          name?: string
+          organizer_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -52,7 +146,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_group_with_event: {
+        Args: {
+          p_event_at: string
+          p_event_title: string
+          p_location: string
+          p_name: string
+        }
+        Returns: string
+      }
+      get_group_by_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: {
+          created_at: string
+          id: string
+          invite_code: string
+          name: string
+          organizer_id: string
+        }[]
+      }
+      join_group_by_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

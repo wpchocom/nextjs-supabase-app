@@ -14,7 +14,7 @@ import { GoogleIcon } from "@/components/google-icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm({
@@ -27,6 +27,8 @@ export function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect_to");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +57,13 @@ export function LoginForm({
     setIsGoogleLoading(true);
 
     try {
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      if (redirectTo && redirectTo.startsWith("/")) {
+        callbackUrl.searchParams.set("next", redirectTo);
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: callbackUrl.toString() },
       });
       if (error) throw error;
       // 성공 시 Supabase SDK가 브라우저를 Google 인증 화면으로 자동 리다이렉트한다.

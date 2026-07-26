@@ -1,57 +1,60 @@
-import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
 
+async function HeroCta() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+
+  return (
+    <Button asChild size="lg">
+      <Link href={data?.claims ? "/protected" : "/auth/login"}>
+        {data?.claims ? "내 그룹으로 이동" : "시작하기"}
+      </Link>
+    </Button>
+  );
+}
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center">
-      <div className="flex w-full flex-1 flex-col items-center gap-20">
-        <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
-          <div className="flex w-full max-w-5xl items-center justify-between p-3 px-5 text-sm">
-            <div className="flex items-center gap-5 font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex max-w-5xl flex-1 flex-col gap-20 p-5">
-          <Hero />
-          <main className="flex flex-1 flex-col gap-6 px-4">
-            <h2 className="mb-4 text-xl font-medium">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
-        </div>
-
-        <footer className="mx-auto flex w-full items-center justify-center gap-8 border-t py-16 text-center text-xs">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-          </p>
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+      <nav className="flex h-16 items-center justify-between gap-2 border-b border-b-foreground/10 p-3 px-5 text-sm">
+        <Link href={"/"} className="shrink-0 font-semibold">
+          모임 이벤트관리
+        </Link>
+        <div className="flex items-center gap-1">
+          {!hasEnvVars ? (
+            <EnvVarWarning />
+          ) : (
+            <Suspense>
+              <AuthButton />
+            </Suspense>
+          )}
           <ThemeSwitcher />
-        </footer>
+        </div>
+      </nav>
+      <div className="flex flex-1 flex-col items-center gap-6 p-5 text-center">
+        <h1 className="text-3xl font-bold">
+          소모임 운영, 공지·참석·정산·카풀까지 한 곳에서
+        </h1>
+        <p className="text-muted-foreground">
+          카카오톡 대화방과 수기 계산으로 흩어져 있던 소모임 운영을 하나의 웹
+          서비스로 옮겨보세요.
+        </p>
+        {hasEnvVars ? (
+          <Suspense>
+            <HeroCta />
+          </Suspense>
+        ) : (
+          <Button asChild size="lg">
+            <Link href="/auth/login">시작하기</Link>
+          </Button>
+        )}
       </div>
     </main>
   );
