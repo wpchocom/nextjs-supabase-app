@@ -1,10 +1,30 @@
-export default function AnnouncementsPage() {
+import { Suspense } from "react";
+
+import { AnnouncementsView } from "@/components/announcements-view";
+import { RouteLoading } from "@/components/route-loading";
+import { getAnnouncementsByGroupId } from "@/lib/data/announcements";
+
+async function AnnouncementsContent({
+  params,
+}: {
+  params: Promise<{ groupId: string }>;
+}) {
+  const { groupId } = await params;
+  const announcements = await getAnnouncementsByGroupId(groupId);
+
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">공지사항</h2>
-      <p className="text-sm text-muted-foreground">
-        그룹 공지 목록과 작성 폼이 이곳에 표시됩니다.
-      </p>
-    </div>
+    <AnnouncementsView groupId={groupId} initialAnnouncements={announcements} />
+  );
+}
+
+export default function AnnouncementsPage({
+  params,
+}: {
+  params: Promise<{ groupId: string }>;
+}) {
+  return (
+    <Suspense fallback={<RouteLoading />}>
+      <AnnouncementsContent params={params} />
+    </Suspense>
   );
 }

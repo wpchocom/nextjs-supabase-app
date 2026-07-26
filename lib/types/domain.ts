@@ -33,3 +33,13 @@ export interface Event {
   location: string;
   createdAt: string;
 }
+
+export interface Announcement {
+  id: string;
+  groupId: string;
+  eventId: string | null;
+  authorId: string;
+  title: string;
+  content: string;
+  createdAt: string;
+}
