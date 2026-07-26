@@ -177,7 +177,7 @@
 
 #### ① 더미데이터 UI/UX 구현
 
-- [ ] **Task 008: 공지사항 페이지 구현 (더미데이터)**
+- [x] **Task 008: 공지사항 페이지 구현 (더미데이터)**
   - 공지 목록 — 최신순 정렬, 작성자 프로필·작성일 표시, 공지 없을 때 EmptyState
   - 공지 작성 폼 — `components/announcement-form.tsx`, `textarea` 프리미티브 사용, **주최자에게만 노출**
   - 회차 연결 선택 — `select`로 특정 이벤트에 귀속시키거나 그룹 전체 공지로 등록
@@ -186,14 +186,14 @@
 
 #### ② 🔍 사용자 확인 체크포인트
 
-- [ ] **🔍 CP-1: 사용자 확인 필요 — 공지사항 화면 검증**
+- [x] **🔍 CP-1: 사용자 확인 필요 — 공지사항 화면 검증**
   - 확인 대상: `/protected/groups/[groupId]/announcements` (주최자 뷰 / 참여자 뷰 양쪽)
   - Playwright MCP 스크린샷 제공 및 피드백 반영
   - **⛔ 사용자 승인 전까지 Task 009 착수 금지**
 
 #### ③ DB 스키마 + RLS
 
-- [ ] **Task 009: announcements 스키마 마이그레이션**
+- [x] **Task 009: announcements 스키마 마이그레이션**
   - CP-1에서 확정된 화면 기준으로 `announcements` 테이블 생성 (id, group_id, event_id nullable, author_id, title, content, created_at)
   - RLS — 조회는 그룹 멤버 전원, 작성/수정/삭제는 주최자만
   - `announcements(group_id, created_at desc)` 인덱스 추가
@@ -201,12 +201,12 @@
 
 #### ④ 실데이터 연동
 
-- [ ] **Task 010: 공지 등록/조회 실데이터 연동 (F005)**
+- [x] **Task 010: 공지 등록/조회 실데이터 연동 (F005)**
   - `lib/data/`의 공지 조회 함수를 Supabase 실호출로 교체, 작성자 프로필 조인, `<Suspense>` 적용
   - 공지 작성 폼 실제 insert 연동, 등록 후 목록 갱신
   - **테스트 체크리스트**: Playwright MCP — 주최자 작성 후 목록 즉시 반영, 참여자 계정에서 작성 UI 미노출 및 직접 insert 차단
 
-- [ ] **Task 011: 이메일 발송 인프라 구축 (F006)**
+- [ ] **Task 011: 이메일 발송 인프라 구축 (F006)** ⏸️ 보류 — Resend 계정/API 키 발급 대기 중
   - Resend 계정/도메인 설정 및 API 키를 Supabase Edge Function 시크릿으로 등록 (`.env.local`에 클라이언트 노출 금지)
   - `mcp__supabase__deploy_edge_function`으로 공지 발송 Edge Function 배포 — 그룹 active 멤버 이메일 수집 후 Resend 일괄 발송
   - `announcements` INSERT에 Database Webhook 연결해 Edge Function 트리거
@@ -216,9 +216,10 @@
 
 #### ⑤ 통합 테스트
 
-- [ ] **Task 012: Phase 1 통합 테스트**
-  - Playwright MCP — 공지 등록 → 목록 노출 → 참여자 계정 조회 → 이메일 발송 전체 플로우
-  - 엣지 케이스: 이메일 발송 실패 시에도 공지 등록 자체는 성공하는지(비동기 분리) 확인
+- [ ] **Task 012: Phase 1 통합 테스트** — F005 범위만 검증 완료, F006(이메일) 검증은 Task 011 완료 후 재실행 필요
+  - Playwright MCP — 공지 등록 → 목록 노출 → 참여자 계정 조회(작성 UI 미노출 확인) 완료
+  - lint/typecheck/build 통과 확인 완료
+  - 남은 항목: 이메일 발송 전체 플로우, 발송 실패 시에도 공지 등록 자체는 성공하는지(비동기 분리) 확인
 
 ---
 
