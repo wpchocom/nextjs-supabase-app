@@ -1,13 +1,33 @@
-import { getDummyEventParticipants } from "@/lib/dummy/event-participants";
+import { createClient } from "@/lib/supabase/server";
 import type { EventParticipant } from "@/lib/types/domain";
 
-/**
- * groupId는 더미 생성을 위한 임시 인자다. Task016에서 실제 event_participants
- * 조회로 교체되면 eventId만으로 조회 가능해져 이 인자는 제거된다.
- */
+function mapParticipant(row: {
+  id: string;
+  event_id: string;
+  user_id: string;
+  rsvp_status: string;
+  attendance_status: string;
+  created_at: string;
+}): EventParticipant {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    userId: row.user_id,
+    rsvpStatus: row.rsvp_status as EventParticipant["rsvpStatus"],
+    attendanceStatus:
+      row.attendance_status as EventParticipant["attendanceStatus"],
+    createdAt: row.created_at,
+  };
+}
+
 export async function getParticipantsByEventId(
   eventId: string,
-  groupId: string,
 ): Promise<EventParticipant[]> {
-  return getDummyEventParticipants(groupId, eventId);
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("event_participants")
+    .select("*")
+    .eq("event_id", eventId);
+
+  return (data ?? []).map(mapParticipant);
 }

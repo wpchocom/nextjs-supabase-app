@@ -36,12 +36,22 @@ const ROLE_LABEL: Record<string, string> = {
   member: "참여자",
 };
 
+const RSVP_LABEL: Record<RsvpStatus, string> = {
+  attending: "참석",
+  not_attending: "불참",
+  pending: "미응답",
+};
+
 export function MembersView({
   isOrganizer,
+  currentUserId,
+  eventId,
   initialMembers,
   initialParticipants,
 }: {
   isOrganizer: boolean;
+  currentUserId: string;
+  eventId: string | null;
   initialMembers: MemberWithProfile[];
   initialParticipants: EventParticipant[];
 }) {
@@ -66,10 +76,45 @@ export function MembersView({
     }
   };
 
-  const handleRsvpChange = (userId: string, rsvpStatus: RsvpStatus) => {
-    setParticipants((prev) =>
-      prev.map((p) => (p.userId === userId ? { ...p, rsvpStatus } : p)),
-    );
+  const handleRsvpChange = async (rsvpStatus: RsvpStatus) => {
+    if (!eventId) return;
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("event_participants")
+        .upsert(
+          {
+            event_id: eventId,
+            user_id: currentUserId,
+            rsvp_status: rsvpStatus,
+          },
+          { onConflict: "event_id,user_id" },
+        )
+        .select()
+        .single();
+      if (error) throw error;
+
+      setParticipants((prev) => {
+        const others = prev.filter((p) => p.userId !== currentUserId);
+        return [
+          ...others,
+          {
+            id: data.id,
+            eventId: data.event_id,
+            userId: data.user_id,
+            rsvpStatus: data.rsvp_status as RsvpStatus,
+            attendanceStatus:
+              data.attendance_status as EventParticipant["attendanceStatus"],
+            createdAt: data.created_at,
+          },
+        ];
+      });
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "RSVP 변경에 실패했습니다.",
+      );
+    }
   };
 
   const handleAttendanceChange = (userId: string, attended: boolean) => {
@@ -82,11 +127,19 @@ export function MembersView({
     );
   };
 
+  const memberRsvpStatuses = members.map(
+    (member) =>
+      participants.find((p) => p.userId === member.userId)?.rsvpStatus ??
+      "pending",
+  );
+
   const summary = {
-    attending: participants.filter((p) => p.rsvpStatus === "attending").length,
-    notAttending: participants.filter((p) => p.rsvpStatus === "not_attending")
+    attending: memberRsvpStatuses.filter((status) => status === "attending")
       .length,
-    pending: participants.filter((p) => p.rsvpStatus === "pending").length,
+    notAttending: memberRsvpStatuses.filter(
+      (status) => status === "not_attending",
+    ).length,
+    pending: memberRsvpStatuses.filter((status) => status === "pending").length,
   };
 
   return (
@@ -197,12 +250,16 @@ export function MembersView({
                     <TableRow key={member.id}>
                       <TableCell>{member.displayName}</TableCell>
                       <TableCell>
-                        <RsvpToggle
-                          rsvpStatus={rsvpStatus}
-                          onChange={(status) =>
-                            handleRsvpChange(member.userId, status)
-                          }
-                        />
+                        {member.userId === currentUserId ? (
+                          <RsvpToggle
+                            rsvpStatus={rsvpStatus}
+                            onChange={handleRsvpChange}
+                          />
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {RSVP_LABEL[rsvpStatus]}
+                          </span>
+                        )}
                       </TableCell>
                       {isOrganizer && (
                         <TableCell>
@@ -237,12 +294,16 @@ export function MembersView({
                   <CardContent className="flex flex-col gap-3 pt-6">
                     <p className="font-medium">{member.displayName}</p>
                     <div className="flex items-center justify-between gap-2">
-                      <RsvpToggle
-                        rsvpStatus={rsvpStatus}
-                        onChange={(status) =>
-                          handleRsvpChange(member.userId, status)
-                        }
-                      />
+                      {member.userId === currentUserId ? (
+                        <RsvpToggle
+                          rsvpStatus={rsvpStatus}
+                          onChange={handleRsvpChange}
+                        />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          {RSVP_LABEL[rsvpStatus]}
+                        </span>
+                      )}
                       {isOrganizer && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">
