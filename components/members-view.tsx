@@ -117,14 +117,97 @@ export function MembersView({
     }
   };
 
-  const handleAttendanceChange = (userId: string, attended: boolean) => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.userId === userId
-          ? { ...p, attendanceStatus: attended ? "attended" : "unconfirmed" }
-          : p,
-      ),
-    );
+  const handleAttendanceChange = async (userId: string, attended: boolean) => {
+    if (!eventId) return;
+    setError(null);
+    try {
+      const supabase = createClient();
+      const attendanceStatus = attended ? "attended" : "unconfirmed";
+      const { data, error } = await supabase
+        .from("event_participants")
+        .upsert(
+          {
+            event_id: eventId,
+            user_id: userId,
+            attendance_status: attendanceStatus,
+          },
+          { onConflict: "event_id,user_id" },
+        )
+        .select()
+        .single();
+      if (error) throw error;
+
+      setParticipants((prev) => {
+        const others = prev.filter((p) => p.userId !== userId);
+        return [
+          ...others,
+          {
+            id: data.id,
+            eventId: data.event_id,
+            userId: data.user_id,
+            rsvpStatus: data.rsvp_status as RsvpStatus,
+            attendanceStatus:
+              data.attendance_status as EventParticipant["attendanceStatus"],
+            createdAt: data.created_at,
+          },
+        ];
+      });
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "출석 상태 변경에 실패했습니다.",
+      );
+    }
+  };
+
+  const handleBulkAttendance = async () => {
+    if (!eventId) return;
+    setError(null);
+
+    const attendingMemberIds = members
+      .filter(
+        (member) =>
+          (participants.find((p) => p.userId === member.userId)?.rsvpStatus ??
+            "pending") === "attending",
+      )
+      .map((member) => member.userId);
+
+    if (attendingMemberIds.length === 0) return;
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("event_participants")
+        .upsert(
+          attendingMemberIds.map((userId) => ({
+            event_id: eventId,
+            user_id: userId,
+            attendance_status: "attended",
+          })),
+          { onConflict: "event_id,user_id" },
+        )
+        .select();
+      if (error) throw error;
+
+      setParticipants((prev) => {
+        const untouched = prev.filter(
+          (p) => !attendingMemberIds.includes(p.userId),
+        );
+        const updated = data.map((row) => ({
+          id: row.id,
+          eventId: row.event_id,
+          userId: row.user_id,
+          rsvpStatus: row.rsvp_status as RsvpStatus,
+          attendanceStatus:
+            row.attendance_status as EventParticipant["attendanceStatus"],
+          createdAt: row.created_at,
+        }));
+        return [...untouched, ...updated];
+      });
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "일괄 출석 반영에 실패했습니다.",
+      );
+    }
   };
 
   const memberRsvpStatuses = members.map(
@@ -222,10 +305,22 @@ export function MembersView({
 
         <TabsContent value="attendance" className="flex flex-col gap-4 pt-4">
           <Card>
-            <CardContent className="flex flex-wrap gap-4 pt-6 text-sm">
-              <p>참석 {summary.attending}명</p>
-              <p>불참 {summary.notAttending}명</p>
-              <p>미응답 {summary.pending}명</p>
+            <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6 text-sm">
+              <div className="flex flex-wrap gap-4">
+                <p>참석 {summary.attending}명</p>
+                <p>불참 {summary.notAttending}명</p>
+                <p>미응답 {summary.pending}명</p>
+              </div>
+              {isOrganizer && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkAttendance}
+                >
+                  RSVP 참석자 일괄 출석 반영
+                </Button>
+              )}
             </CardContent>
           </Card>
 
