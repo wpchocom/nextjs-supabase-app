@@ -229,7 +229,7 @@
 
 #### ① 더미데이터 UI/UX 구현
 
-- [ ] **Task 013: 참여자관리 페이지 구현 (더미데이터)**
+- [x] **Task 013: 참여자관리 페이지 구현 (더미데이터)**
   - `tabs` 프리미티브로 "멤버 로스터" / "회차별 참석" 뷰 분리
   - `table` 프리미티브 기반 멤버 테이블 — 프로필(아바타/이름), 역할, RSVP, 출석 컬럼
   - RSVP 토글, 출석 체크박스, 멤버 제거 확인 다이얼로그를 **로컬 상태로 동작**시켜 실제 조작감을 확인할 수 있게 구현
@@ -239,14 +239,14 @@
 
 #### ② 🔍 사용자 확인 체크포인트
 
-- [ ] **🔍 CP-2: 사용자 확인 필요 — 참여자관리 화면 검증**
+- [x] **🔍 CP-2: 사용자 확인 필요 — 참여자관리 화면 검증**
   - 확인 대상: `/protected/groups/[groupId]/members` (로스터 탭 / 회차별 참석 탭, 주최자·참여자 양쪽 뷰)
   - Playwright MCP 스크린샷 제공 및 피드백 반영
   - **⛔ 사용자 승인 전까지 Task 014 착수 금지**
 
 #### ③ DB 스키마 + RLS
 
-- [ ] **Task 014: event_participants 스키마 마이그레이션**
+- [x] **Task 014: event_participants 스키마 마이그레이션**
   - CP-2에서 확정된 화면 기준으로 `event_participants` 생성 (id, event_id, user_id, rsvp_status, attendance_status, created_at)
   - RLS — 조회는 그룹 멤버, 쓰기는 주최자만이되 **RSVP는 본인 row 예외 허용**
   - `event_participants(event_id, user_id)` 유니크 제약 및 인덱스
@@ -254,19 +254,19 @@
 
 #### ④ 실데이터 연동
 
-- [ ] **Task 015: 멤버 로스터 관리 (F002)**
+- [x] **Task 015: 멤버 로스터 관리 (F002)**
   - `group_members` + `profiles` 조인 조회로 더미 데이터 교체
   - 멤버 제거 — **소프트 삭제**(`status='removed'`), 물리 삭제 금지. 제거된 멤버는 목록에서 제외되나 과거 정산/출석 기록은 보존
   - 주최자 본인 제거 방지 가드
   - **테스트 체크리스트**: Playwright MCP — 제거 후 목록 갱신, 제거된 멤버 계정에서 그룹 접근 차단, 과거 기록 보존 확인
 
-- [ ] **Task 016: 회차별 RSVP (F003)**
+- [x] **Task 016: 회차별 RSVP (F003)**
   - `event_participants` upsert로 본인 RSVP 갱신 — attending / not_attending / pending
   - **RLS 본인 예외 검증**: 참여자가 타인의 RSVP를 변경할 수 없어야 함
   - 미응답 멤버를 `pending`으로 간주하는 표시 규칙 확정 (row가 없는 경우 포함)
   - **테스트 체크리스트**: Playwright MCP — 두 계정으로 각자 RSVP 변경, 상호 간섭 없음 확인, 타인 row 직접 update 시도 차단
 
-- [ ] **Task 017: 출석 체크 (F004)**
+- [x] **Task 017: 출석 체크 (F004)**
   - 주최자 전용 출석 체크 연동 — attended / absent / unconfirmed
   - **출석 상태는 Phase 3 정산 대상자 판단의 기준**이므로 데이터 정합성 확인
   - RSVP 참석자를 출석으로 일괄 반영하는 편의 액션
@@ -274,7 +274,7 @@
 
 #### ⑤ 통합 테스트
 
-- [ ] **Task 018: Phase 2 통합 테스트**
+- [x] **Task 018: Phase 2 통합 테스트**
   - Playwright MCP — 합류 → RSVP → 출석체크 → 로스터 제거 전체 플로우
   - 엣지 케이스: 멤버 0명 그룹, RSVP 후 제거된 멤버의 집계 처리
 
